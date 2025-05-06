@@ -6,27 +6,32 @@
     <title>Магазин свечей</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body { font-family: sans-serif; padding: 20px; }
-        .item { border: 1px solid #ccc; padding: 10px; margin-bottom: 10px; }
-        button { margin-top: 5px; }
-        #cart { margin-top: 20px; }
+        body { font-family: sans-serif; padding: 20px; background: #fff8f0; }
+        h1 { color: #333; }
+        .item { border: 1px solid #ccc; padding: 10px; margin-bottom: 10px; border-radius: 8px; background: #fff; }
+        button { margin-top: 5px; padding: 6px 10px; border: none; background-color: #d179b9; color: white; border-radius: 4px; cursor: pointer; }
+        #cart { margin-top: 20px; padding-top: 10px; border-top: 1px solid #ccc; }
+        input { margin: 4px 0; padding: 4px; width: 100%; }
     </style>
 </head>
 <body>
     <h1>Магазин свечей</h1>
     <div id="items"></div>
+
     <div id="cart">
         <h3>Корзина</h3>
         <ul id="cart-list"></ul>
         <div>
-            <label>Город: <input type="text" id="city"></label><br>
-            <label>Адрес: <input type="text" id="address"></label><br>
-            <label><input type="checkbox" id="pickup"> Самовывоз</label><br>
+            <label>Город:<br><input type="text" id="city" placeholder="Например, Хабаровск"></label><br>
+            <label>Адрес:<br><input type="text" id="address" placeholder="Улица, дом, квартира"></label><br>
+            <label><input type="checkbox" id="pickup"> Самовывоз</label><br><br>
             <button onclick="checkout()">Оформить заказ</button>
         </div>
     </div>
 
     <script>
+        Telegram.WebApp.ready();
+
         const items = [
             { name: "На деньги", price: 500 },
             { name: "На любовь", price: 500 },
@@ -54,14 +59,14 @@
             cartList.innerHTML = '';
             cart.forEach(item => {
                 const li = document.createElement('li');
-                li.textContent = item.name + ' - ' + item.price + '₽';
+                li.textContent = item.name + ' — ' + item.price + '₽';
                 cartList.appendChild(li);
             });
         }
 
         function checkout() {
-            const city = document.getElementById('city').value;
-            const address = document.getElementById('address').value;
+            const city = document.getElementById('city').value.trim();
+            const address = document.getElementById('address').value.trim();
             const pickup = document.getElementById('pickup').checked;
 
             const data = {
@@ -71,6 +76,7 @@
             };
 
             Telegram.WebApp.sendData(JSON.stringify(data));
+            Telegram.WebApp.close();
         }
     </script>
 </body>
