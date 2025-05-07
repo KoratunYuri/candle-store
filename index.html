@@ -30,6 +30,7 @@
 
     <script>
         Telegram.WebApp.ready();
+        Telegram.WebApp.expand(); // Важно для мобилок!
 
         const items = [
             { name: "На деньги", price: 500 },
@@ -64,6 +65,7 @@
         }
 
         function checkout() {
+            console.log("🔥 checkout() вызван");
             const city = document.getElementById('city').value.trim();
             const address = document.getElementById('address').value.trim();
             const pickup = document.getElementById('pickup').checked;
@@ -76,7 +78,7 @@
 
             console.log("📤 Отправка данных:", data);
             Telegram.WebApp.sendData(JSON.stringify(data));
-            // Telegram.WebApp.close(); ← удалена!
+            // НЕ закрываем WebApp!
         }
     </script>
 </body>
