@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -77,9 +76,7 @@
 
             console.log("📤 Отправка данных:", data);
             Telegram.WebApp.sendData(JSON.stringify(data));
-            setTimeout(() => {
-                Telegram.WebApp.close();
-            }, 500); // задержка перед закрытием — для iOS/Android
+            // Telegram.WebApp.close(); ← удалена!
         }
     </script>
 </body>
