@@ -74,9 +74,11 @@
                 address: pickup ? "Самовывоз" : address
             };
 
+            console.log("📤 Отправка данных:", data);
             Telegram.WebApp.sendData(JSON.stringify(data));
             Telegram.WebApp.close();
         }
     </script>
 </body>
 </html>
+
