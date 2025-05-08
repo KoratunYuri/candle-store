@@ -2,18 +2,28 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <title>Проверка WebApp</title>
+  <title>WebApp Тест</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 <body>
   <h1>Тест WebApp</h1>
+  <button onclick="checkout()">Оформить</button>
+
   <script>
     Telegram.WebApp.ready();
     Telegram.WebApp.expand();
 
-    const initData = Telegram.WebApp.initData || "❌ ПУСТО";
-    alert("Telegram.WebApp.initData: " + initData);
-    console.log("✅ initData:", initData);
+    function checkout() {
+      const data = {
+        items: [{ name: "🔥 Сигнальный заказ", price: 999 }],
+        city: "test-city",
+        address: "test-address"
+      };
+
+      alert("✅ Отправляем: " + JSON.stringify(data));
+      Telegram.WebApp.sendData(JSON.stringify(data));
+      console.log("✅ Данные отправлены");
+    }
   </script>
 </body>
 </html>
