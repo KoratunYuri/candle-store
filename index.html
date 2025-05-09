@@ -68,19 +68,6 @@
       color: #888;
       margin-bottom: 8px;
     }
-    .counter {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-    }
-    .counter button {
-      background: #ccc;
-      border: none;
-      padding: 6px 10px;
-      border-radius: 5px;
-      font-size: 16px;
-    }
     .card button {
       background: #007aff;
       color: white;
@@ -89,76 +76,223 @@
       border-radius: 6px;
       cursor: pointer;
     }
+    .hidden { display: none; }
+    .confirmation, .cart-page {
+      padding: 20px;
+    }
+    .confirmation {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+    .confirmation h2 {
+      font-size: 24px;
+      margin: 20px 0 10px;
+    }
+    .confirmation p {
+      font-size: 16px;
+      color: #444;
+    }
+    .confirmation button {
+      margin-top: 20px;
+      padding: 10px 20px;
+      background: #007aff;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 16px;
+    }
+    input {
+      margin: 8px 0;
+      padding: 10px;
+      width: 100%;
+      box-sizing: border-box;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+    .cart-line {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 5px 0;
+    }
+    .cart-line button {
+      margin-left: 5px;
+      background: #ccc;
+      color: #333;
+      border: none;
+      padding: 4px 8px;
+      border-radius: 4px;
+    }
   </style>
 </head>
 <body>
-  <div class="container">
+  <div id="shop" class="container">
     <div class="grid" id="itemGrid"></div>
   </div>
 
+  <div id="cart" class="container hidden">
+    <div class="cart-page">
+      <h2>Корзина</h2>
+      <div id="cartList"></div>
+      <p><strong>Итого: <span id="total">0₽</span></strong></p>
+      <input type="text" id="lastname" placeholder="Фамилия">
+      <input type="text" id="firstname" placeholder="Имя">
+      <input type="text" id="phone" placeholder="+7XXXXXXXXXX">
+      <input type="text" id="city" placeholder="Город">
+      <input type="text" id="address" placeholder="Адрес">
+      <label><input type="checkbox" id="pickup"> Самовывоз</label><br>
+      <button onclick="checkout()" style="margin-top: 10px;">Оформить заказ</button>
+    </div>
+  </div>
+
+  <div id="confirmation" class="container hidden">
+    <div class="confirmation">
+      <div style="font-size: 64px;">✅</div>
+      <h2>Спасибо за заказ!</h2>
+      <p>Мы свяжемся с вами в ближайшее время.</p>
+      <button onclick="goToShop()">Вернуться в магазин</button>
+    </div>
+  </div>
+
+  <div class="nav">
+    <button onclick="goToShop()">🛍 Магазин</button>
+    <button onclick="goToCart()">🧾 Корзина</button>
+  </div>
+
   <script>
+    Telegram.WebApp.ready();
+
+    const BOT_TOKEN = '7987338974:AAFGe-sbPh3GFpnyVVv3nWgH9XQsZ2QH4t0';
+    const ADMIN_ID = 319994578;
+
     const items = [
       { name: "Свеча на деньги", price: 500 },
-      { name: "Свеча на любовь", price: 500, image: "https://cdn.openai.com/chat-assets/na-lyubov.png" },
+      { name: "Свеча на любовь", price: 500 },
       { name: "Свеча на очищение", price: 500 },
       { name: "Свеча универсальная", price: 450 }
     ];
 
     const cart = {};
+    const shopDiv = document.getElementById('shop');
+    const cartDiv = document.getElementById('cart');
+    const confirmationDiv = document.getElementById('confirmation');
     const itemGrid = document.getElementById('itemGrid');
+    const cartList = document.getElementById('cartList');
+    const totalSpan = document.getElementById('total');
 
-    items.forEach((item, index) => {
+    items.forEach(item => {
       const card = document.createElement('div');
       card.className = 'card';
       card.innerHTML = `
-        <img src="${item.image || 'https://via.placeholder.com/160x120?text=Фото'}" alt="${item.name}">
+        <img src="https://via.placeholder.com/160x120?text=Фото" alt="${item.name}">
         <div class="card-body">
           <div>
             <div class="card-title">${item.name}</div>
             <div class="card-price">${item.price}₽</div>
           </div>
-          <div id="control-${index}">
-            <button onclick="addToCart(${index})">🛒 Добавить</button>
-          </div>
+          <button onclick="addToCart('${item.name}', ${item.price})">🛒 Добавить</button>
         </div>
       `;
       itemGrid.appendChild(card);
     });
 
-    function updateCounter(index) {
-      const control = document.getElementById(`control-${index}`);
-      const item = items[index];
-      const quantity = cart[item.name] || 0;
+    function addToCart(name, price) {
+      if (cart[name]) cart[name].quantity++;
+      else cart[name] = { price, quantity: 1 };
+      updateCart();
+    }
 
-      if (quantity === 0) {
-        control.innerHTML = `<button onclick="addToCart(${index})">🛒 Добавить</button>`;
-      } else {
-        control.innerHTML = `
-          <div class="counter">
-            <button onclick="removeFromCart(${index})">−</button>
-            <span>${quantity}</span>
-            <button onclick="addToCart(${index})">+</button>
-          </div>
+    function updateCart() {
+      cartList.innerHTML = '';
+      let total = 0;
+      Object.keys(cart).forEach(name => {
+        const item = cart[name];
+        total += item.price * item.quantity;
+        const line = document.createElement('div');
+        line.className = 'cart-line';
+        line.innerHTML = `
+          <span>${name} × ${item.quantity} — ${item.price * item.quantity}₽</span>
+          <span>
+            <button onclick="addToCart('${name}', ${item.price})">+</button>
+            <button onclick="removeFromCart('${name}')">−</button>
+            <button onclick="deleteFromCart('${name}')">🗑</button>
+          </span>
         `;
-      }
+        cartList.appendChild(line);
+      });
+      totalSpan.textContent = total + '₽';
     }
 
-    function addToCart(index) {
-      const name = items[index].name;
-      cart[name] = (cart[name] || 0) + 1;
-      updateCounter(index);
+    function removeFromCart(name) {
+      if (cart[name].quantity > 1) cart[name].quantity--;
+      else delete cart[name];
+      updateCart();
     }
 
-    function removeFromCart(index) {
-      const name = items[index].name;
-      if (cart[name] > 1) {
-        cart[name]--;
-      } else {
-        delete cart[name];
+    function deleteFromCart(name) {
+      delete cart[name];
+      updateCart();
+    }
+
+    function checkout() {
+      const lastname = document.getElementById('lastname').value.trim();
+      const firstname = document.getElementById('firstname').value.trim();
+      const phone = document.getElementById('phone').value.trim();
+      const city = document.getElementById('city').value.trim();
+      const address = document.getElementById('address').value.trim();
+      const pickup = document.getElementById('pickup').checked;
+
+      if (!lastname || !firstname || !phone.startsWith('+7') || phone.length !== 12) {
+        alert("Пожалуйста, введите корректные ФИО и телефон (+7XXXXXXXXXX)");
+        return;
       }
-      updateCounter(index);
+
+      const itemList = Object.keys(cart).map(name => {
+        const item = cart[name];
+        return `• ${name} × ${item.quantity} — ${item.price * item.quantity}₽`;
+      }).join('\n');
+
+      const text = `📦 *Новый заказ*\n\n👤 *ФИО:* ${lastname} ${firstname}\n📞 *Телефон:* ${phone}\n📍 *Город:* ${city}\n🏠 *Адрес:* ${pickup ? 'Самовывоз' : address}\n🕯 *Товары:*\n${itemList}`;
+
+      fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+        method: 'POST',
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ chat_id: ADMIN_ID, text, parse_mode: "Markdown" })
+      })
+      .then(res => res.json())
+      .then(res => {
+        if (res.ok) {
+          for (let key in cart) delete cart[key];
+          updateCart();
+          goToConfirmation();
+        } else {
+          alert("Ошибка Telegram: " + JSON.stringify(res));
+        }
+      })
+      .catch(err => alert("Ошибка сети: " + err.message));
+    }
+
+    function goToShop() {
+      shopDiv.classList.remove('hidden');
+      cartDiv.classList.add('hidden');
+      confirmationDiv.classList.add('hidden');
+    }
+
+    function goToCart() {
+      shopDiv.classList.add('hidden');
+      cartDiv.classList.remove('hidden');
+      confirmationDiv.classList.add('hidden');
+    }
+
+    function goToConfirmation() {
+      shopDiv.classList.add('hidden');
+      cartDiv.classList.add('hidden');
+      confirmationDiv.classList.remove('hidden');
     }
   </script>
 </body>
 </html>
+
 
