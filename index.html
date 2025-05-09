@@ -2,40 +2,113 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <title>Магазин свечей (через fetch)</title>
+  <title>Магазин свечей</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
     body { font-family: sans-serif; padding: 20px; background: #fff8f0; }
     h1 { color: #333; }
-    input, button { margin: 10px 0; padding: 10px; width: 100%; font-size: 16px; }
+    .item {
+      border: 1px solid #ccc;
+      padding: 10px;
+      margin-bottom: 10px;
+      border-radius: 8px;
+      background: #fff;
+    }
+    button {
+      margin-top: 5px;
+      padding: 6px 10px;
+      border: none;
+      background-color: #d179b9;
+      color: white;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    #cart {
+      margin-top: 20px;
+      padding-top: 10px;
+      border-top: 1px solid #ccc;
+    }
+    input {
+      margin: 4px 0;
+      padding: 8px;
+      width: 100%;
+      box-sizing: border-box;
+    }
   </style>
 </head>
 <body>
-  <h1>Оформление заказа</h1>
-  <input type="text" id="city" placeholder="Город" />
-  <input type="text" id="address" placeholder="Адрес доставки" />
-  <button onclick="checkout()">Оформить заказ</button>
+  <h1>Магазин свечей</h1>
+  <div id="items"></div>
+
+  <div id="cart">
+    <h3>Корзина</h3>
+    <ul id="cart-list"></ul>
+    <div>
+      <label>Город:<br><input type="text" id="city" placeholder="Например, Хабаровск"></label><br>
+      <label>Адрес:<br><input type="text" id="address" placeholder="Улица, дом, квартира"></label><br>
+      <label><input type="checkbox" id="pickup"> Самовывоз</label><br><br>
+      <button onclick="checkout()">Оформить заказ</button>
+    </div>
+  </div>
 
   <script>
     Telegram.WebApp.ready();
-
     const BOT_TOKEN = '7987338974:AAFGe-sbPh3GFpnyVVv3nWgH9XQsZ2QH4t0';
     const ADMIN_ID = 319994578;
 
+    const items = [
+      { name: "На деньги", price: 500 },
+      { name: "На любовь", price: 500 },
+      { name: "На очищение", price: 500 }
+    ];
+
+    const cart = [];
+    const itemsDiv = document.getElementById('items');
+    const cartList = document.getElementById('cart-list');
+
+    // Отрисовка товаров
+    items.forEach((item, i) => {
+      const div = document.createElement('div');
+      div.className = 'item';
+      div.innerHTML = `
+        <strong>${item.name}</strong>
+        <p>эта свеча изменит твою жизнь</p>
+        <p>${item.price}₽</p>
+        <button onclick="addToCart(${i})">Купить</button>
+      `;
+      itemsDiv.appendChild(div);
+    });
+
+    function addToCart(index) {
+      cart.push(items[index]);
+      updateCart();
+    }
+
+    function updateCart() {
+      cartList.innerHTML = '';
+      cart.forEach(item => {
+        const li = document.createElement('li');
+        li.textContent = item.name + ' — ' + item.price + '₽';
+        cartList.appendChild(li);
+      });
+    }
+
     function checkout() {
-      const city = document.getElementById("city").value.trim();
-      const address = document.getElementById("address").value.trim();
+      const city = document.getElementById('city').value.trim();
+      const address = document.getElementById('address').value.trim();
+      const pickup = document.getElementById('pickup').checked;
 
       const data = {
-        items: [{ name: "🔥 Свеча через fetch", price: 555 }],
+        items: cart,
         city: city || "не указан",
-        address: address || "не указан"
+        address: pickup ? "Самовывоз" : (address || "не указан")
       };
 
-      const text = `📦 *Новый заказ (через fetch)*\\n\\n` +
+      const itemList = data.items.map(i => `• ${i.name} — ${i.price}₽`).join('\\n');
+      const text = `📦 *Новый заказ*\\n\\n` +
                    `📍 *Город:* ${data.city}\\n` +
                    `🏠 *Адрес:* ${data.address}\\n` +
-                   `🕯 *Товар:* ${data.items[0].name} — ${data.items[0].price}₽`;
+                   `🕯 *Товары:*\\n${itemList}`;
 
       fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
         method: 'POST',
@@ -49,7 +122,9 @@
       .then(res => res.json())
       .then(res => {
         if (res.ok) {
-          alert("✅ Заказ отправлен напрямую!");
+          alert("✅ Заказ отправлен!");
+          cart.length = 0;
+          updateCart();
         } else {
           alert("❌ Ошибка Telegram: " + JSON.stringify(res));
         }
