@@ -2,34 +2,61 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <title>🔥 Финальный WebApp</title>
+  <title>Магазин свечей (через fetch)</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    body { font-family: sans-serif; padding: 20px; background: #fff8f0; }
+    h1 { color: #333; }
+    input, button { margin: 10px 0; padding: 10px; width: 100%; font-size: 16px; }
+  </style>
 </head>
 <body>
-  <h1>Тест WebApp</h1>
+  <h1>Оформление заказа</h1>
+  <input type="text" id="city" placeholder="Город" />
+  <input type="text" id="address" placeholder="Адрес доставки" />
   <button onclick="checkout()">Оформить заказ</button>
 
   <script>
     Telegram.WebApp.ready();
-    Telegram.WebApp.expand();
+
+    const BOT_TOKEN = '7987338974:AAFGe-sbPh3GFpnyVVv3nWgH9XQsZ2QH4t0';
+    const ADMIN_ID = 319994578;
 
     function checkout() {
+      const city = document.getElementById("city").value.trim();
+      const address = document.getElementById("address").value.trim();
+
       const data = {
-        items: [{ name: "🔥 С телефона!", price: 777 }],
-        city: "телефон-город",
-        address: "телефон-адрес"
+        items: [{ name: "🔥 Свеча через fetch", price: 555 }],
+        city: city || "не указан",
+        address: address || "не указан"
       };
 
-      alert("✅ Отправляем заказ: " + JSON.stringify(data));
-      console.log("📤 Отправка пошла");
-      
-      Telegram.WebApp.sendData(JSON.stringify(data));
+      const text = `📦 *Новый заказ (через fetch)*\\n\\n` +
+                   `📍 *Город:* ${data.city}\\n` +
+                   `🏠 *Адрес:* ${data.address}\\n` +
+                   `🕯 *Товар:* ${data.items[0].name} — ${data.items[0].price}₽`;
 
-      // ⏱ задержка перед закрытием, чтобы дать Telegram отработать
-      setTimeout(() => {
-        console.log("✅ Закрытие WebApp");
-        // Telegram.WebApp.close(); // можно вернуть, если всё работает
-      }, 1000);
+      fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+        method: 'POST',
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chat_id: ADMIN_ID,
+          text: text,
+          parse_mode: "Markdown"
+        })
+      })
+      .then(res => res.json())
+      .then(res => {
+        if (res.ok) {
+          alert("✅ Заказ отправлен напрямую!");
+        } else {
+          alert("❌ Ошибка Telegram: " + JSON.stringify(res));
+        }
+      })
+      .catch(err => {
+        alert("🚫 Ошибка сети: " + err.message);
+      });
     }
   </script>
 </body>
