@@ -1,201 +1,199 @@
+
 <!DOCTYPE html>
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
   <title>Магазин свечей</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-</head>
-<body>
-  <script>
-    Telegram.WebApp.ready();
-    Telegram.WebApp.expand(); // авторазворачивание
-  </script>
-  <h1>Магазин работает ✅</h1>
-</body>
-</html>
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
-    body {
-      margin: 0;
-      font-family: sans-serif;
-      background: #f9f9f9;
-    }
-
-    .tabs {
-      display: flex;
-      justify-content: center;
-      border-top: 1px solid #ccc;
-      position: fixed;
-      bottom: 0;
-      width: 100%;
-      background: #fff;
-    }
-
-    .tabs button {
-      flex: 1;
-      padding: 12px;
-      border: none;
-      background: #fff;
-      font-weight: bold;
-      cursor: pointer;
-    }
-
-    .tabs button.active {
-      border-top: 2px solid #ff2d8a;
-      color: #ff2d8a;
-    }
-
-    #catalog, #cart {
-      padding: 12px;
-      padding-bottom: 60px;
-    }
-
-    .card {
-      background: #fff;
-      border-radius: 8px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-      padding: 10px;
-      margin-bottom: 16px;
-      text-align: center;
-    }
-
-    .card img {
-      width: 100%;
-      height: 120px;
-      object-fit: cover;
-      border-radius: 6px;
-    }
-
-    .card h3 {
-      margin: 8px 0 4px;
-      font-size: 16px;
-    }
-
-    .card p {
-      margin: 4px 0;
-      color: #555;
-    }
-
-    .card button {
-      background: #007bff;
-      color: white;
-      padding: 6px 12px;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-
-    @media (max-width: 400px) {
-      .card {
-        font-size: 16px;
-      }
-
-      .card img {
-        height: auto;
-        max-height: 140px;
-      }
-
-      .card button {
-        font-size: 15px;
-        padding: 8px 16px;
-      }
-    }
+    body { font-family: sans-serif; margin: 0; padding: 0; background: #f6f6f6; }
+    .nav { display: flex; justify-content: space-around; background: #fff; border-top: 1px solid #ccc; position: fixed; bottom: 0; width: 100%; }
+    .nav button { flex: 1; padding: 15px; font-size: 16px; background: none; border: none; cursor: pointer; }
+    .container { padding: 16px; padding-bottom: 80px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
+    .card { background: white; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); overflow: hidden; display: flex; flex-direction: column; }
+    .card img { width: 100%; height: 120px; object-fit: cover; }
+    .card-body { padding: 10px; flex-grow: 1; display: flex; flex-direction: column; justify-content: space-between; }
+    .card-title { font-weight: bold; font-size: 14px; margin-bottom: 5px; }
+    .card-price { font-size: 13px; color: #888; margin-bottom: 8px; }
+    .card button, .counter button { background: #007aff; color: white; border: none; padding: 8px; border-radius: 6px; cursor: pointer; }
+    .hidden { display: none; }
+    input { margin: 8px 0; padding: 10px; width: 100%; box-sizing: border-box; border: 1px solid #ccc; border-radius: 6px; }
+    .cart-line { display: flex; justify-content: space-between; align-items: center; margin: 5px 0; }
+    .cart-line button { margin-left: 5px; background: #ccc; color: #333; border: none; padding: 4px 8px; border-radius: 4px; }
+    .confirmation, .cart-page { padding: 20px; }
+    .confirmation { display: flex; flex-direction: column; align-items: center; text-align: center; }
+    .confirmation h2 { font-size: 24px; margin: 20px 0 10px; }
+    .confirmation p { font-size: 16px; color: #444; }
+    .confirmation button { margin-top: 20px; padding: 10px 20px; background: #007aff; color: white; border: none; border-radius: 6px; font-size: 16px; }
+    .counter { display: flex; align-items: center; justify-content: center; gap: 10px; }
+    .counter span { font-size: 16px; }
   </style>
 </head>
 <body>
-  <div id="catalog"></div>
-  <div id="cart" style="display:none;"></div>
-
-  <div class="tabs">
-    <button id="tab-catalog" class="active">🛍 Магазин</button>
-    <button id="tab-cart">🧺 Корзина</button>
+  <div id="shop" class="container"><div class="grid" id="itemGrid"></div></div>
+  <div id="cart" class="container hidden">
+    <div class="cart-page">
+      <h2>Корзина</h2>
+      <div id="cartList"></div>
+      <p><strong>Итого: <span id="total">0₽</span></strong></p>
+      <input type="text" id="lastname" placeholder="Фамилия">
+      <input type="text" id="firstname" placeholder="Имя">
+      <input type="text" id="phone" placeholder="+7XXXXXXXXXX">
+      <input type="text" id="city" placeholder="Город">
+      <input type="text" id="address" placeholder="Адрес">
+      <label><input type="checkbox" id="pickup"> Самовывоз</label><br>
+      <button onclick="checkout()" style="margin-top: 10px;">Оформить заказ</button>
+    </div>
   </div>
-
+  <div id="confirmation" class="container hidden">
+    <div class="confirmation">
+      <div style="font-size: 64px;">✅</div>
+      <h2>Спасибо за заказ!</h2>
+      <p>Мы свяжемся с вами в ближайшее время.</p>
+      <button onclick="goToShop()">Вернуться в магазин</button>
+    </div>
+  </div>
+  <div class="nav">
+    <button onclick="goToShop()">🛍 Магазин</button>
+    <button onclick="goToCart()">🧾 Корзина</button>
+  </div>
   <script>
     Telegram.WebApp.ready();
-    Telegram.WebApp.expand(); // 🔥 авторазворачивание Mini App
-
     const items = [
-      {
-        name: "Свеча на деньги",
-        price: 500,
-        image: "https://via.placeholder.com/160x120?text=Фото"
-      },
-      {
-        name: "Свеча на любовь",
-        price: 500,
-        image: "https://raw.githubusercontent.com/KoratunYuri/candle-store/main/love.png"
-      },
-      {
-        name: "Свеча на очищение",
-        price: 500,
-        image: "https://via.placeholder.com/160x120?text=Фото"
-      },
-      {
-        name: "Свеча универсальная",
-        price: 450,
-        image: "https://via.placeholder.com/160x120?text=Фото"
-      }
+      { name: "Свеча на деньги", price: 500, image: "https://raw.githubusercontent.com/KoratunYuri/candle-store/main/money.png" },
+      { name: "Свеча на любовь", price: 500, image: "https://raw.githubusercontent.com/KoratunYuri/candle-store/main/love.png" },
+      { name: "Свеча на очищение", price: 500, image: "https://raw.githubusercontent.com/KoratunYuri/candle-store/main/clean.png" },
+      { name: "Свеча универсальная", price: 450, image: "https://raw.githubusercontent.com/KoratunYuri/candle-store/main/clean.png" }
     ];
+    const cart = {};
+    const shopDiv = document.getElementById('shop');
+    const cartDiv = document.getElementById('cart');
+    const confirmationDiv = document.getElementById('confirmation');
+    const itemGrid = document.getElementById('itemGrid');
+    const cartList = document.getElementById('cartList');
+    const totalSpan = document.getElementById('total');
+    const TOKEN = '7987338974:AAFGe-sbPh3GFpnyVVv3nWgH9XQsZ2QH4t0';
+    const ADMIN_ID = 319994578;
 
-    const catalogEl = document.getElementById('catalog');
-    const cartEl = document.getElementById('cart');
-    const cart = [];
+    items.forEach((item, index) => {
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.innerHTML = `
+        <img src="${item.image}" alt="${item.name}">
+        <div class="card-body">
+          <div><div class="card-title">${item.name}</div><div class="card-price">${item.price}₽</div></div>
+          <div id="control-${index}"><button onclick="addToCart(${index})">🛒 Добавить</button></div>
+        </div>`;
+      itemGrid.appendChild(card);
+    });
 
-    function renderCatalog() {
-      catalogEl.innerHTML = '';
-      items.forEach((item, i) => {
-        const div = document.createElement('div');
-        div.className = 'card';
-        div.innerHTML = `
-          <img src="${item.image}" alt="${item.name}">
-          <h3>${item.name}</h3>
-          <p>${item.price}₽</p>
-          <button onclick="addToCart(${i})">Добавить</button>
-        `;
-        catalogEl.appendChild(div);
-      });
-    }
-
-    function renderCart() {
-      cartEl.innerHTML = '<h2>Корзина</h2>';
-      if (cart.length === 0) {
-        cartEl.innerHTML += '<p>Корзина пуста</p>';
-        return;
+    function updateCounter(index) {
+      const control = document.getElementById(`control-${index}`);
+      const item = items[index];
+      const quantity = cart[item.name]?.quantity || 0;
+      if (quantity === 0) {
+        control.innerHTML = `<button onclick="addToCart(${index})">🛒 Добавить</button>`;
+      } else {
+        control.innerHTML = `
+          <div class="counter">
+            <button onclick="removeFromCart(${index})">−</button>
+            <span>${quantity}</span>
+            <button onclick="addToCart(${index})">+</button>
+          </div>`;
       }
-      const list = document.createElement('ul');
-      cart.forEach(item => {
-        const li = document.createElement('li');
-        li.textContent = `${item.name} — ${item.price}₽`;
-        list.appendChild(li);
-      });
-      cartEl.appendChild(list);
     }
 
     function addToCart(index) {
-      cart.push(items[index]);
-      alert('Добавлено в корзину!');
+      const item = items[index];
+      cart[item.name] = cart[item.name] || { price: item.price, quantity: 0 };
+      cart[item.name].quantity++;
+      updateCounter(index);
+      updateCart();
     }
 
-    document.getElementById('tab-catalog').onclick = () => {
-      catalogEl.style.display = 'block';
-      cartEl.style.display = 'none';
-      toggleTab(true);
-    };
-    document.getElementById('tab-cart').onclick = () => {
-      renderCart();
-      catalogEl.style.display = 'none';
-      cartEl.style.display = 'block';
-      toggleTab(false);
-    };
-
-    function toggleTab(isCatalog) {
-      document.getElementById('tab-catalog').classList.toggle('active', isCatalog);
-      document.getElementById('tab-cart').classList.toggle('active', !isCatalog);
+    function removeFromCart(index) {
+      const item = items[index];
+      if (cart[item.name]) {
+        cart[item.name].quantity--;
+        if (cart[item.name].quantity <= 0) delete cart[item.name];
+        updateCounter(index);
+        updateCart();
+      }
     }
 
-    renderCatalog();
+    function updateCart() {
+      cartList.innerHTML = '';
+      let total = 0;
+      Object.keys(cart).forEach(name => {
+        const item = cart[name];
+        total += item.price * item.quantity;
+        const line = document.createElement('div');
+        line.className = 'cart-line';
+        line.innerHTML = `
+          <span>${name} × ${item.quantity} — ${item.price * item.quantity}₽</span>
+          <span>
+            <button onclick="removeFromCart(${items.findIndex(i => i.name === name)})">−</button>
+            <button onclick="addToCart(${items.findIndex(i => i.name === name)})">+</button>
+            <button onclick="deleteFromCart('${name}')">🗑</button>
+          </span>`;
+        cartList.appendChild(line);
+      });
+      totalSpan.textContent = total + '₽';
+    }
+
+    function deleteFromCart(name) {
+      delete cart[name];
+      updateCart();
+      const index = items.findIndex(i => i.name === name);
+      updateCounter(index);
+    }
+
+    function checkout() {
+      const lastname = document.getElementById('lastname').value.trim();
+      const firstname = document.getElementById('firstname').value.trim();
+      const phone = document.getElementById('phone').value.trim();
+      const city = document.getElementById('city').value.trim();
+      const address = document.getElementById('address').value.trim();
+      const pickup = document.getElementById('pickup').checked;
+      if (!lastname || !firstname || !phone.startsWith('+7') || phone.length !== 12) {
+        alert("Введите корректные ФИО и телефон");
+        return;
+      }
+      const itemList = Object.keys(cart).map(name => {
+        const item = cart[name];
+        return `• ${name} × ${item.quantity} — ${item.price * item.quantity}₽`;
+      }).join('\n');
+      const text = `📦 *Новый заказ*\n\n👤 *ФИО:* ${lastname} ${firstname}\n📞 *Телефон:* ${phone}\n📍 *Город:* ${city}\n🏠 *Адрес:* ${pickup ? 'Самовывоз' : address}\n🕯 *Товары:*\n${itemList}`;
+      fetch(`https://api.telegram.org/bot${TOKEN}/sendMessage`, {
+        method: 'POST',
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ chat_id: ADMIN_ID, text, parse_mode: "Markdown" })
+      }).then(r => r.json()).then(res => {
+        if (res.ok) {
+          Object.keys(cart).forEach(name => delete cart[name]);
+          items.forEach((_, i) => updateCounter(i));
+          updateCart();
+          goToConfirmation();
+        } else alert("Ошибка: " + JSON.stringify(res));
+      }).catch(err => alert("Сетевая ошибка: " + err.message));
+    }
+
+    function goToShop() {
+      shopDiv.classList.remove('hidden');
+      cartDiv.classList.add('hidden');
+      confirmationDiv.classList.add('hidden');
+    }
+    function goToCart() {
+      shopDiv.classList.add('hidden');
+      cartDiv.classList.remove('hidden');
+      confirmationDiv.classList.add('hidden');
+    }
+    function goToConfirmation() {
+      shopDiv.classList.add('hidden');
+      cartDiv.classList.add('hidden');
+      confirmationDiv.classList.remove('hidden');
+    }
   </script>
 </body>
 </html>
