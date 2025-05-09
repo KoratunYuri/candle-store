@@ -13,9 +13,9 @@
       margin-bottom: 10px;
       border-radius: 8px;
       background: #fff;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
     }
     button {
-      margin-top: 5px;
       padding: 6px 10px;
       border: none;
       background-color: #d179b9;
@@ -34,6 +34,15 @@
       width: 100%;
       box-sizing: border-box;
     }
+    .cart-line {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 5px 0;
+    }
+    .controls button {
+      margin-left: 5px;
+    }
   </style>
 </head>
 <body>
@@ -42,8 +51,12 @@
 
   <div id="cart">
     <h3>Корзина</h3>
-    <ul id="cart-list"></ul>
+    <div id="cart-list"></div>
+    <div><strong>Итого: <span id="total">0₽</span></strong></div>
     <div>
+      <label>Фамилия:<br><input type="text" id="lastname" placeholder="Ваша фамилия"></label><br>
+      <label>Имя:<br><input type="text" id="firstname" placeholder="Ваше имя"></label><br>
+      <label>Телефон:<br><input type="text" id="phone" placeholder="+7..." pattern="^\\+7\\d{10}$"></label><br>
       <label>Город:<br><input type="text" id="city" placeholder="Например, Хабаровск"></label><br>
       <label>Адрес:<br><input type="text" id="address" placeholder="Улица, дом, квартира"></label><br>
       <label><input type="checkbox" id="pickup"> Самовывоз</label><br><br>
@@ -62,11 +75,11 @@
       { name: "На очищение", price: 500 }
     ];
 
-    const cart = [];
+    const cart = {};
     const itemsDiv = document.getElementById('items');
     const cartList = document.getElementById('cart-list');
+    const totalSpan = document.getElementById('total');
 
-    // Отрисовка товаров
     items.forEach((item, i) => {
       const div = document.createElement('div');
       div.className = 'item';
@@ -80,35 +93,87 @@
     });
 
     function addToCart(index) {
-      cart.push(items[index]);
+      const name = items[index].name;
+      if (cart[name]) {
+        cart[name].quantity++;
+      } else {
+        cart[name] = { ...items[index], quantity: 1 };
+      }
       updateCart();
     }
 
     function updateCart() {
       cartList.innerHTML = '';
-      cart.forEach(item => {
-        const li = document.createElement('li');
-        li.textContent = item.name + ' — ' + item.price + '₽';
-        cartList.appendChild(li);
+      let total = 0;
+
+      Object.keys(cart).forEach(name => {
+        const item = cart[name];
+        total += item.price * item.quantity;
+
+        const div = document.createElement('div');
+        div.className = 'cart-line';
+        div.innerHTML = `
+          <span>${item.name} × ${item.quantity} — ${item.price * item.quantity}₽</span>
+          <span class="controls">
+            <button onclick="addToCartByName('${name}')">+</button>
+            <button onclick="removeFromCart('${name}')">−</button>
+            <button onclick="deleteFromCart('${name}')">🗑</button>
+          </span>
+        `;
+        cartList.appendChild(div);
       });
+
+      totalSpan.textContent = total + '₽';
+    }
+
+    function addToCartByName(name) {
+      cart[name].quantity++;
+      updateCart();
+    }
+
+    function removeFromCart(name) {
+      if (cart[name].quantity > 1) {
+        cart[name].quantity--;
+      } else {
+        delete cart[name];
+      }
+      updateCart();
+    }
+
+    function deleteFromCart(name) {
+      delete cart[name];
+      updateCart();
     }
 
     function checkout() {
+      const firstname = document.getElementById('firstname').value.trim();
+      const lastname = document.getElementById('lastname').value.trim();
+      const phone = document.getElementById('phone').value.trim();
       const city = document.getElementById('city').value.trim();
       const address = document.getElementById('address').value.trim();
       const pickup = document.getElementById('pickup').checked;
 
-      const data = {
-        items: cart,
-        city: city || "не указан",
-        address: pickup ? "Самовывоз" : (address || "не указан")
-      };
+      if (!firstname || !lastname || !phone || !phone.startsWith('+7') || phone.length !== 12) {
+        alert("❗ Пожалуйста, введите ФИО и корректный телефон (+7XXXXXXXXXX)");
+        return;
+      }
 
-      const itemList = data.items.map(i => `• ${i.name} — ${i.price}₽`).join('\\n');
+      const itemsList = Object.keys(cart).map(name => ({
+        name,
+        price: cart[name].price,
+        quantity: cart[name].quantity
+      }));
+
+      const itemListText = itemsList.map(i =>
+        `• ${i.name} × ${i.quantity} — ${i.price * i.quantity}₽`
+      ).join('\\n');
+
       const text = `📦 *Новый заказ*\\n\\n` +
-                   `📍 *Город:* ${data.city}\\n` +
-                   `🏠 *Адрес:* ${data.address}\\n` +
-                   `🕯 *Товары:*\\n${itemList}`;
+                   `👤 *ФИО:* ${lastname} ${firstname}\\n` +
+                   `📞 *Телефон:* ${phone}\\n` +
+                   `📍 *Город:* ${city || "не указан"}\\n` +
+                   `🏠 *Адрес:* ${pickup ? "Самовывоз" : (address || "не указан")}\\n` +
+                   `🕯 *Товары:*\\n${itemListText}`;
 
       fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
         method: 'POST',
@@ -123,7 +188,7 @@
       .then(res => {
         if (res.ok) {
           alert("✅ Заказ отправлен!");
-          cart.length = 0;
+          for (let key in cart) delete cart[key];
           updateCart();
         } else {
           alert("❌ Ошибка Telegram: " + JSON.stringify(res));
@@ -136,3 +201,4 @@
   </script>
 </body>
 </html>
+
